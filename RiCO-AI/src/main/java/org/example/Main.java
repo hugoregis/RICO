@@ -1,6 +1,5 @@
 package org.example;
 
-
 import kbingest.ILPGen;
 import kbingest.parser.ParseError;
 

@@ -1,5 +1,7 @@
 package kbingest;
 
+
+
 import kbingest.parser.ParseError;
 import kbingest.translator.KB;
 import kbingest.translator.Predicate;
