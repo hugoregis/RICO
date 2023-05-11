@@ -10,7 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class ILPGen {
-    public static final String SOURCE1 = "resources/animals.pl";
+    public static final String SOURCE1 = "RiCO-AI/resources/animals.pl";
 
     public static void run() throws ParseError, IOException {
         System.out.println("Hello world!");
