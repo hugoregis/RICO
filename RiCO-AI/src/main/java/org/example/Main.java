@@ -4,15 +4,16 @@ import kbingest.ILPGen;
 import kbingest.parser.ParseError;
 import org.jpl7.*;
 
-import java.io.IOException;
+import java.io.*;
 
 public class Main {
-    public static void main(String[] args) throws ParseError, IOException {
+    public static void main(String[] args) throws ParseError, IOException, InterruptedException {
         System.out.println("Hello world!");
         ILPGen ILP = new ILPGen();
         ILP.run();
-//        runPrologAutoILP();
-        testProlog2();
+        runPrologAutoILP();
+        runHaskell();
+        //testProlog2();
     }
 
     public static void runPrologAutoILP(){
@@ -24,7 +25,31 @@ public class Main {
             System.out.println("False");
     }
 
-    public static void testProlog1(){  //From: https://jpl7.org/TutorialJavaCallsProlog
+    public static void runHaskell() throws IOException, InterruptedException {
+        File location = new File("RiCO-AI\\resources");
+        String[] cmd = {"ghc", "LODv2.hs"};
+        ProcessBuilder builder = new ProcessBuilder(cmd);
+        builder.directory(location);
+        Process p = builder.start();
+
+        //Testing stuff I got online
+       /* InputStream stderr = p.getErrorStream();
+        InputStreamReader isr = new InputStreamReader(stderr);
+        BufferedReader br = new BufferedReader(isr);
+        String line = null;
+        System.out.println("<ERROR>");
+        while ( (line = br.readLine()) != null)
+            System.out.println(line);
+        System.out.println("</ERROR>"); */
+        int exitVal = p.waitFor();
+        System.out.println("Exit Value: " + exitVal);
+
+        p.destroy();
+        }
+
+
+
+   public static void testProlog1(){  //From: https://jpl7.org/TutorialJavaCallsProlog
         Query q1 =
                 new Query(
                         "consult",
@@ -93,7 +118,7 @@ public class Main {
         Query q1 =
                 new Query(
                         "consult",
-                        new Term[] {new Atom("resources/animals.pl")}
+                        new Term[] {new Atom("RiCO-AI/resources/animals.pl")}
                 );
         System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
         Query q2 =
