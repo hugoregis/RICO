@@ -1,7 +1,11 @@
 package org.example;
 
+import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.service.OpenAiService;
 import kbingest.ILPGen;
+import kbingest.RandFactGen;
 import kbingest.parser.ParseError;
+import kbingest.translator.KB;
 import org.jpl7.*;
 
 import java.io.*;
@@ -9,11 +13,16 @@ import java.io.*;
 public class Main {
     public static void main(String[] args) throws ParseError, IOException, InterruptedException {
         System.out.println("Hello world!");
-        ILPGen ILP = new ILPGen();
+        String[] filePaths = {"resources/animals.pl"};
+        KB myKB = new KB(filePaths);
+        ILPGen ILP = new ILPGen(myKB);
         ILP.run();
-        runPrologAutoILP();
         runHaskell();
         //testProlog2();
+//        runPrologAutoILP();
+        testProlog2();
+        RandFactGen FactGen = new RandFactGen(myKB);
+        FactGen.run();
     }
 
     public static void runPrologAutoILP(){
