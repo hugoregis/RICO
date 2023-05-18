@@ -1,5 +1,6 @@
 package org.example;
 
+import OpenAPI.Test;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.service.OpenAiService;
 import kbingest.ILPGen;
@@ -18,7 +19,11 @@ public class Main {
         ILPGen ILP = new ILPGen(myKB);
         ILP.run();
         runHaskell();
-        //testProlog2();
+
+//        OpenAI API test:
+//        Test t = new Test();
+//        t.run();
+
 //        runPrologAutoILP();
         testProlog2();
         RandFactGen FactGen = new RandFactGen(myKB);
@@ -35,11 +40,22 @@ public class Main {
     }
 
     public static void runHaskell() throws IOException, InterruptedException {
-        File location = new File("RiCO-AI\\resources");
-        String[] cmd = {"ghc", "LODv2.hs"};
+        System.out.println("Executing Haskell query...");
+        //        File location = new File("RiCO-AI\\resources");
+        File location = new File("resources/");
+        String[] cmd = {"runghc","LODv2.hs","tau","(Being Bird)"};
         ProcessBuilder builder = new ProcessBuilder(cmd);
         builder.directory(location);
         Process p = builder.start();
+
+        InputStream is = p.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+
 
         //Testing stuff I got online
        /* InputStream stderr = p.getErrorStream();
@@ -50,8 +66,8 @@ public class Main {
         while ( (line = br.readLine()) != null)
             System.out.println(line);
         System.out.println("</ERROR>"); */
-        int exitVal = p.waitFor();
-        System.out.println("Exit Value: " + exitVal);
+//        int exitVal = p.waitFor();
+//        System.out.println("Exit Value: " + exitVal);
 
         p.destroy();
         }
@@ -127,7 +143,7 @@ public class Main {
         Query q1 =
                 new Query(
                         "consult",
-                        new Term[] {new Atom("RiCO-AI/resources/animals.pl")}
+                        new Term[] {new Atom("resources/animals.pl")}
                 );
         System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
         Query q2 =

@@ -2,7 +2,7 @@
 
 module LODv2 where
 
-
+import System.Environment
 import qualified Data.Foldable as F
 import qualified Data.Set as S
 import qualified Data.List as L
@@ -24,7 +24,13 @@ instance Ord Object where
   (>=) ob1 ob2 = S.isSubsetOf (intensionOb ob1) (intensionOb ob2)
   (<=) ob1 ob2 = S.isSubsetOf (intensionOb ob2) (intensionOb ob1)
 
-
+-- can be improved with more functions
+main = do
+  [x, y] <- getArgs
+  print $ case x of 
+    "tau" -> tau $ read y
+    otherwise -> read y
+  
 
 emptyDet :: Det
 emptyDet = Det {detChain = []}
