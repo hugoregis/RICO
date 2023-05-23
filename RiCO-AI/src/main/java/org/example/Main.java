@@ -7,14 +7,21 @@ import kbingest.ILPGen;
 import kbingest.RandFactGen;
 import kbingest.parser.ParseError;
 import kbingest.translator.KB;
-import org.jpl7.*;
 
+import org.jpl7.*;
 import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws ParseError, IOException, InterruptedException {
         System.out.println("Hello world!");
-        String[] filePaths = {"resources/animals.pl"};
+        String system = System.getProperty("os.name");
+        String[] filePaths = new String[1];
+
+        if (system.contains("Windows"))
+            filePaths[0] = "RICO-AI/resources/animals.pl";
+        else
+            filePaths[0] = "resources/animals.pl";
+
         KB myKB = new KB(filePaths);
         ILPGen ILP = new ILPGen(myKB);
         ILP.run();
@@ -24,7 +31,7 @@ public class Main {
 //        Test t = new Test();
 //        t.run();
 
-//        runPrologAutoILP();
+        runPrologAutoILP();
         testProlog2();
         RandFactGen FactGen = new RandFactGen(myKB);
         FactGen.run();
@@ -40,9 +47,17 @@ public class Main {
     }
 
     public static void runHaskell() throws IOException, InterruptedException {
+
+        String system = System.getProperty("os.name");
+        File location;
+
         System.out.println("Executing Haskell query...");
-        //        File location = new File("RiCO-AI\\resources");
-        File location = new File("resources/");
+
+        if (system.contains("Windows"))
+            location = new File("RiCO-AI\\resources");
+        else
+            location = new File("/resources");
+
         String[] cmd = {"runghc","LODv2.hs","tau","(Being Bird)"};
         ProcessBuilder builder = new ProcessBuilder(cmd);
         builder.directory(location);
@@ -139,11 +154,23 @@ public class Main {
         }
     }
 
-    public static void testProlog2(){
+    public static void testProlog2() {
+
+        String system = System.getProperty("os.name");
+        System.out.println(system);
+        String animals;
+
+        if (system.contains("Windows")){
+            animals = "RICO-AI\\resources\\animals.pl";
+        }
+        else{
+            animals = "resources/animals.pl";
+        }
+
         Query q1 =
                 new Query(
                         "consult",
-                        new Term[] {new Atom("resources/animals.pl")}
+                        new Term[] {new Atom(animals)}
                 );
         System.out.println( "consult " + (q1.hasSolution() ? "succeeded" : "failed"));
         Query q2 =

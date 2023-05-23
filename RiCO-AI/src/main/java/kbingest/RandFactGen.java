@@ -22,12 +22,20 @@ public class RandFactGen {
     }
 
     public void run() throws IOException {
+        String system = System.getProperty("os.name");
+        String location;
+
+        if (system.contains("Windows"))
+            location = "RICO-AI\\resources\\random_facts";
+        else
+            location = "resources/random_facts";
+
         Query q1 =
                 new Query(
                         "use_module",
-                        new Term[] {new Atom("resources/random_facts")}
+                        new Term[] {new Atom(location)}
                 );
-        System.out.println( "use_module resources/random_facts " + (q1.hasSolution() ? "succeeded" : "failed"));
+        System.out.println( "use_module " + location + " " + (q1.hasSolution() ? "succeeded" : "failed"));
 
         for (Predicate pred : this.kb.getModuleList().get(0).getPredicateList()) {
             Term[] predTerms = new Term[pred.getArity()];
