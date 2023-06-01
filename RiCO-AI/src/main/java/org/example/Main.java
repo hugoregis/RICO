@@ -7,8 +7,14 @@ import kbingest.ILPGen;
 import kbingest.RandFactGen;
 import kbingest.parser.ParseError;
 import kbingest.translator.KB;
+import org.apache.jena.fuseki.main.FusekiServer;
+import org.apache.jena.query.*;
+import org.apache.jena.rdf.model.RDFNode;
+import org.jpl7.Atom;
+import org.jpl7.Query;
+import org.jpl7.Term;
+import org.jpl7.Variable;
 
-import org.jpl7.*;
 import java.io.*;
 
 public class Main {
@@ -22,19 +28,51 @@ public class Main {
         else
             filePaths[0] = "resources/animals.pl";
 
-        KB myKB = new KB(filePaths);
-        ILPGen ILP = new ILPGen(myKB);
-        ILP.run();
-        runHaskell();
+      // KB myKB = new KB(filePaths);
+      // ILPGen ILP = new ILPGen(myKB);
+      //ILP.run();
+       //runHaskell();
 
-//        OpenAI API test:
-//        Test t = new Test();
-//        t.run();
+        //OpenAI API test:
+        //Test t = new Test();
+       // t.run();
 
-        runPrologAutoILP();
-        testProlog2();
-        RandFactGen FactGen = new RandFactGen(myKB);
-        FactGen.run();
+        //runPrologAutoILP();
+        //testProlog2();
+        //RandFactGen FactGen = new RandFactGen(myKB);
+        //FactGen.run();
+
+        /*File location = new File("C:\\Users\\camnc\\OneDrive\\Documents\\apache-jena-fuseki-4.8.0");
+        String cmd = "fuseki-server --conf /Sparnatural";
+
+        ProcessBuilder builder = new ProcessBuilder(cmd);
+        builder.directory(location);
+        Process p = builder.start();*/
+
+
+
+       String query = "SELECT ?subject ?predicate ?object\n" +
+                "WHERE {\n" +
+                "  ?subject ?predicate ?object\n" +
+                "}\n" +
+                "LIMIT 25";
+
+        String serviceURI = "http://localhost:3030/Sparnatural";
+
+        QueryExecution q = QueryExecutionFactory.sparqlService(serviceURI,
+                query);
+
+        ResultSet results = q.execSelect();
+
+        ResultSetFormatter.out(System.out, results);
+
+        while (results.hasNext()) {
+            QuerySolution soln = results.nextSolution();
+            RDFNode x = soln.get("x");
+            System.out.println(x);
+        }
+
+
     }
 
     public static void runPrologAutoILP(){
@@ -86,7 +124,6 @@ public class Main {
 
         p.destroy();
         }
-
 
 
    public static void testProlog1(){  //From: https://jpl7.org/TutorialJavaCallsProlog
