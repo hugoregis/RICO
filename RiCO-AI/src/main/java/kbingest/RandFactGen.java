@@ -21,7 +21,7 @@ public class RandFactGen {
         this.kb = myKB;
     }
 
-    public void run() throws IOException {
+    public String run() throws IOException {
         String system = System.getProperty("os.name");
         String location;
 
@@ -37,6 +37,8 @@ public class RandFactGen {
                 );
         System.out.println( "use_module " + location + " " + (q1.hasSolution() ? "succeeded" : "failed"));
 
+        String completeListPred = "";
+
         for (Predicate pred : this.kb.getModuleList().get(0).getPredicateList()) {
             Term[] predTerms = new Term[pred.getArity()];
             for (int i = 0 ; i < pred.getArity() ; i++){
@@ -50,10 +52,16 @@ public class RandFactGen {
             System.out.println( "Query " + q2.toString() + " " + (q2.hasSolution() ? "succeeded" : "failed"));
             Query q3 = new Query(
                     "get_X_random_pred",
-                    new Term[] {new Atom (pred.getName()), new org.jpl7.Integer( ThreadLocalRandom.current().nextInt(5,12) ), new Variable("L")}
+                    new Term[] {new Atom (pred.getName()), new org.jpl7.Integer( ThreadLocalRandom.current().nextInt(1,3) ), new Variable("L")}
             );
-            System.out.println( "get_X_random_pred results: " + q3.oneSolution().get("L"));
+
+            String result = q3.oneSolution().get("L").toString();
+            System.out.println( "get_X_random_pred results: " + result);
+            completeListPred = completeListPred + ", " + result.substring(1, result.length() - 1);
         }
+        completeListPred = "[" + completeListPred.substring(2, completeListPred.length()) + "]";
+        System.out.println(completeListPred);
+        return completeListPred;
     }
 
 }
