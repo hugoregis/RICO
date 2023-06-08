@@ -7,9 +7,12 @@ import kbingest.ILPGen;
 import kbingest.RandFactGen;
 import kbingest.parser.ParseError;
 import kbingest.translator.KB;
-import org.apache.jena.fuseki.main.FusekiServer;
-import org.apache.jena.query.*;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdfconnection.RDFConnection;
 import org.jpl7.Atom;
 import org.jpl7.Query;
 import org.jpl7.Term;
@@ -28,39 +31,33 @@ public class Main {
         else
             filePaths[0] = "resources/animals.pl";
 
-      // KB myKB = new KB(filePaths);
-      // ILPGen ILP = new ILPGen(myKB);
-      //ILP.run();
-       //runHaskell();
+       KB myKB = new KB(filePaths);
+       ILPGen ILP = new ILPGen(myKB);
+       ILP.run();
+       runHaskell();
 
         //OpenAI API test:
         //Test t = new Test();
-       // t.run();
+        //t.run();
 
-        //runPrologAutoILP();
-        //testProlog2();
-        //RandFactGen FactGen = new RandFactGen(myKB);
-        //FactGen.run();
-
-        /*File location = new File("C:\\Users\\camnc\\OneDrive\\Documents\\apache-jena-fuseki-4.8.0");
-        String cmd = "fuseki-server --conf /Sparnatural";
-
-        ProcessBuilder builder = new ProcessBuilder(cmd);
-        builder.directory(location);
-        Process p = builder.start();*/
-
-
-
+        runPrologAutoILP();
+        testProlog2();
+        RandFactGen FactGen = new RandFactGen(myKB);
+        FactGen.run();
+        
        String query = "SELECT ?subject ?predicate ?object\n" +
                 "WHERE {\n" +
                 "  ?subject ?predicate ?object\n" +
                 "}\n" +
                 "LIMIT 25";
 
-        String serviceURI = "http://localhost:3030/Sparnatural";
+        String serviceURI = "http://52.54.229.238:3030/dataset2";
+        String mine= "http://localhost:3030/Sp52.54.229.238arnatural";
 
-        QueryExecution q = QueryExecutionFactory.sparqlService(serviceURI,
-                query);
+        RDFConnection conn = RDFConnection.connect(serviceURI);
+        QueryExecution q = conn.query(query) ;
+        //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
+
 
         ResultSet results = q.execSelect();
 
@@ -72,6 +69,7 @@ public class Main {
             System.out.println(x);
         }
 
+        conn.close() ;
 
     }
 
