@@ -1,5 +1,12 @@
 package org.example;
 
+
+//import OpenAPI.Test;
+import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.service.OpenAiService;
+import kbingest.ILPGen;
+import kbingest.RandFactGen;
+
 import kbingest.parser.ParseError;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QuerySolution;
@@ -31,16 +38,45 @@ public class Main {
        //ILP.run();
        //runHaskell();
 
-        //OpenAI API test:
-        //Test t = new Test();
-        //t.run();
+//        runPrologAutoILP();
+//        testProlog2();
+//        RandFactGen FactGen = new RandFactGen(myKB);
+//        FactGen.run();
+//
+       String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+               "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
+               "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> \n" +
+               "SELECT DISTINCT ?this ?this_label WHERE {\n" +
+               "  ?this rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
+               "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Lieu_1.\n" +
+               "  ?Lieu_1 rdf:type <https://www.ica.org/standards/RiC/ontology#Place>.\n" +
+               "  ?Lieu_1 <https://www.ica.org/standards/RiC/ontology#hasOrHadPlaceType> <http://data.archives-nationales.culture.gouv.fr/placeType/paroisse>.\n" +
+               "  ?Lieu_1 ^<https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Personne_3.\n" +
+               "  ?Personne_3 rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
+               "  \n" +
+               "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadAgentName>/<http://www.w3.org/2000/01/rdf-schema#label>|<http://www.w3.org/2000/01/rdf-schema#label> ?this_label.\n" +
+               "}\n" +
+               "LIMIT 10000";
 
-        //runPrologAutoILP();
-        //testProlog2();
-        //RandFactGen FactGen = new RandFactGen(myKB);
-        //FactGen.run();
+        String serviceURI = "http://18.206.154.126:3030/ricoSession";
+//        String mine= "http://localhost:3030/Sp52.54.229.238arnatural";
 
-        queryServer();
+        RDFConnection conn = RDFConnection.connect(serviceURI);
+        QueryExecution q = conn.query(query) ;
+        //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
+
+
+        ResultSet results = q.execSelect();
+
+        ResultSetFormatter.out(System.out, results);
+
+        while (results.hasNext()) {
+            QuerySolution soln = results.nextSolution();
+            RDFNode x = soln.get("x");
+            System.out.println(x);
+        }
+
+        conn.close() ;
 
     }
 
@@ -63,7 +99,7 @@ public class Main {
         if (system.contains("Windows"))
             location = new File("RiCO-AI\\resources");
         else
-            location = new File("/resources");
+            location = new File("resources/");
 
         String[] cmd = {"runghc","LODv2.hs","tau","(Being Bird)"};
         ProcessBuilder builder = new ProcessBuilder(cmd);
