@@ -36,6 +36,13 @@
 
 :- dynamic(rdf_predicate/1).
 
+load_rdf_files :- 
+	rdf_load('/Users/hugolinbergier/RDF_DB/RiC-O_v0-2.rdf', [register_namespaces(true)]),
+	directory_files('/Users/hugolinbergier/RDF_DB',Files),
+	member(File, Files),
+	file_name_extension(_, 'rdf', File),
+	rdf_load(File, [register_namespaces(true)]),
+	fail.
 
 load_rdf_files(MAX) :- 
 	rdf_load('/Users/hugolinbergier/RDF_DB/RiC-O_v0-2.rdf', [register_namespaces(true)]),
@@ -140,6 +147,7 @@ assert_rdf_predicates :-
 	rdf(_, P, _),
 	decompose_uri(P, P2),
 	(\+ rdf_predicate(P2) -> assertz(rdf_predicate(P2)) ; true),
+	write('asserted predicate '), write(P2), nl,
 	fail.
 
 assert_rdf :- 
