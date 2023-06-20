@@ -58,17 +58,24 @@ public class Main {
                "}\n" +
                "LIMIT 10000";
 
+        String query2 = "select (count(*) as ?count) {?s ?p ?o}\n" +
+                "LIMIT 10000";
+
         String serviceURI = "http://18.206.154.126:3030/ricoSession";
 //        String mine= "http://localhost:3030/Sp52.54.229.238arnatural";
 
         RDFConnection conn = RDFConnection.connect(serviceURI);
         QueryExecution q = conn.query(query) ;
+        QueryExecution q2 = conn.query(query2) ;
         //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
 
 
         ResultSet results = q.execSelect();
+        ResultSet results2 = q2.execSelect();
 
         ResultSetFormatter.out(System.out, results);
+
+        ResultSetFormatter.out(System.out, results2);
 
         while (results.hasNext()) {
             QuerySolution soln = results.nextSolution();
