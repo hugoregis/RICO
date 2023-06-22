@@ -30,7 +30,7 @@ public class CompletionRequest {
                 .model("gpt-3.5-turbo")
                 .messages(messages)
                 .n(1)
-                .maxTokens(50)
+                .maxTokens(250)
                 .logitBias(new HashMap<>())
                 .build();
 

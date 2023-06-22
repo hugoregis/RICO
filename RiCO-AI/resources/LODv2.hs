@@ -26,10 +26,11 @@ instance Ord Object where
 
 -- can be improved with more functions
 main = do
-  [x, y] <- getArgs
+  [x, y, z] <- getArgs
   print $ case x of 
-    "tau" -> tau $ read y
-    otherwise -> read y
+    "tau" -> show $ tau $ read y
+    "predicate" -> show $ predicate (read y) (read z)
+    otherwise -> show $ "wrong function"
   
 
 emptyDet :: Det
