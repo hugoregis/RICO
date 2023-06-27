@@ -21,11 +21,13 @@ import org.jpl7.Term;
 import org.jpl7.Variable;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws ParseError, IOException, InterruptedException {
-        System.out.println("Hello world!");
+        //System.out.println("Hello world!");
         String system = System.getProperty("os.name");
         String[] filePaths = new String[1];
 
@@ -34,6 +36,16 @@ public class Main {
         else
             filePaths[0] = "resources/animals.pl";
 
+
+       //KB myKB = new KB(filePaths);
+       //ILPGen ILP = new ILPGen(myKB);
+       //ILP.run();
+       runHaskell();
+
+//        runPrologAutoILP();
+//        testProlog2();
+//        RandFactGen FactGen = new RandFactGen(myKB);
+//        FactGen.run();
         //        testProlog2();  //test JPL
 
        KB myKB = new KB(filePaths);
@@ -132,7 +144,21 @@ public class Main {
 
     public static void runHaskell(String func, String arg1, String arg2) throws IOException, InterruptedException {
 
-        String system = System.getProperty("os.name");
+        int num1 = 3;
+        int num2 = 4;
+
+        URL hsurl = new URL("http://localhost:8000/?num1=" + num1 + "&num2=" + num2);
+        URLConnection hsconn = hsurl.openConnection();
+        BufferedReader input = new BufferedReader(
+                new InputStreamReader(
+                        hsconn.getInputStream()));
+        String inputLine;
+
+        while ((inputLine = input.readLine()) != null)
+            System.out.println(inputLine);
+        input.close();
+
+        /*String system = System.getProperty("os.name");
         File location;
 
         System.out.println("Executing Haskell query:" + " " + func + " " + arg1 + " " + arg2);
@@ -168,7 +194,7 @@ public class Main {
 //        int exitVal = p.waitFor();
 //        System.out.println("Exit Value: " + exitVal);
 
-        p.destroy();
+      //  p.destroy();
         }
 
         public static void queryServer(String query) throws FileNotFoundException {
