@@ -1,7 +1,5 @@
-%% ['/Users/hugolinbergier/Documents/Research/ILP/rdf2pl.pl'].
-%% write_rdf_aleph('test_rdf.pl', rico_isOrWasAgentNameOf).
-%% consult('test_rdf.pl').
-%% induce('test_rdf.pl').
+%% ['/Users/hugolinbergier/dev/RICO/RiCO-AI/resources/rdf2pl.pl'].
+%% init_ILP(10).
 
 %% load_rdf_files(100).
 %% assert_rdf.
@@ -36,6 +34,15 @@
 
 :- dynamic(rdf_predicate/1).
 
+init_ILP5 :- init_ILP(5).
+
+load_rdf_files :- 
+	rdf_load('/Users/hugolinbergier/RDF_DB/RiC-O_v0-2.rdf', [register_namespaces(true)]),
+	directory_files('/Users/hugolinbergier/RDF_DB',Files),
+	member(File, Files),
+	file_name_extension(_, 'rdf', File),
+	rdf_load(File, [register_namespaces(true)]),
+	fail.
 
 load_rdf_files(MAX) :- 
 	rdf_load('/Users/hugolinbergier/RDF_DB/RiC-O_v0-2.rdf', [register_namespaces(true)]),
@@ -116,7 +123,7 @@ rdf_auto :-
 	length(ListPred, NbPred),
 	nth0(I,ListPred,P),
 	logw2('Writting Aleph file for predicate '), write(I), write('/'), write(NbPred), write(': '), write(P), nl,
-	write_rdf_aleph('test_rdf.pl', P),
+	write_rdf_aleph('test_rdf.pl', P, 2),
 	logw('Consutling new Aleph file...'),
 	consult('test_rdf.pl'),
 	logw('Inducing new Aleph file...'),
@@ -124,8 +131,8 @@ rdf_auto :-
 	aleph:write_rules('newRules.txt',user),
 	read_file_to_string('newRules.txt',AddRules,[]), 
 	logw('Updating rules file...'),
-	open('rules.txt',append,Stream),
-	write(Stream, AddRules),
+	open('/Users/hugolinbergier/dev/RICO/RiCO-AI/resources/RICOrules.txt',append,Stream),
+	write(Stream, AddRules), nl(Stream),
 	close(Stream),
 	fail.
 
@@ -140,6 +147,7 @@ assert_rdf_predicates :-
 	rdf(_, P, _),
 	decompose_uri(P, P2),
 	(\+ rdf_predicate(P2) -> assertz(rdf_predicate(P2)) ; true),
+	write('asserted predicate '), write(P2), nl,
 	fail.
 
 assert_rdf :- 

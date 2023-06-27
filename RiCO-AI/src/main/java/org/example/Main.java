@@ -2,7 +2,7 @@ package org.example;
 
 
 //import OpenAPI.Test;
-import com.theokanning.openai.completion.CompletionRequest;
+import OpenAPI.CompletionRequest;
 import com.theokanning.openai.service.OpenAiService;
 import kbingest.ILPGen;
 import kbingest.RandFactGen;
@@ -36,6 +36,7 @@ public class Main {
         else
             filePaths[0] = "resources/animals.pl";
 
+
        //KB myKB = new KB(filePaths);
        //ILPGen ILP = new ILPGen(myKB);
        //ILP.run();
@@ -45,7 +46,64 @@ public class Main {
 //        testProlog2();
 //        RandFactGen FactGen = new RandFactGen(myKB);
 //        FactGen.run();
+        //        testProlog2();  //test JPL
+
+       KB myKB = new KB(filePaths);
+       ILPGen ILP = new ILPGen(myKB);
+       ILP.run();
+       runPrologAutoILP();
+
+       Query q = new Query("fly", new Term[] {new Variable("X")});
+
+       System.out.println("FLying animal : " + q.oneSolution().get("X")); // To demonstrate the persisting working memory of the swipl process
+
+       RandFactGen FactGen = new RandFactGen(myKB);
+       String listPred = FactGen.run();
+
+
+       CompletionRequest GPTFacts = new CompletionRequest(); // is it really going to include all the new rules. We need to import them to make sure it is the case.
+       GPTFacts.runPL2English(listPred);
+//
+//       runRICOAutoILP("init_ILP5");
+
+       runHaskell("predicate", "(Being Bird)", "Delta (Det {detChain = []}) (Being Ostrich)");
+       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Ostrich)");
+       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Bird)");
+
+
+        testSPARQLQuery();
+
     }
+
+
+    public static void testSPARQLQuery() throws FileNotFoundException {
+        String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
+                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> \n" +
+                "SELECT DISTINCT ?this ?this_label WHERE {\n" +
+                "  ?this rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
+                "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Lieu_1.\n" +
+                "  ?Lieu_1 rdf:type <https://www.ica.org/standards/RiC/ontology#Place>.\n" +
+                "  ?Lieu_1 <https://www.ica.org/standards/RiC/ontology#hasOrHadPlaceType> <http://data.archives-nationales.culture.gouv.fr/placeType/paroisse>.\n" +
+                "  ?Lieu_1 ^<https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Personne_3.\n" +
+                "  ?Personne_3 rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
+                "  \n" +
+                "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadAgentName>/<http://www.w3.org/2000/01/rdf-schema#label>|<http://www.w3.org/2000/01/rdf-schema#label> ?this_label.\n" +
+                "}\n" +
+                "LIMIT 10";
+        String query2 = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>\n" +
+                "PREFIX rico: <https://www.ica.org/standards/RiC/ontology#>\n" +
+                "\n" +
+                "select ?s ?o WHERE \n" +
+                "{?s rico:isAssociatedWithPlace ?o} \n" +
+                "LIMIT 10";
+
+        queryServer(query);
+        queryServer(query2);
+    }
+
 
     public static void runPrologAutoILP(){
         Query q = new Query("consult", new Term[] {new Atom("auto_ilp.pl")});
@@ -56,7 +114,35 @@ public class Main {
             System.out.println("False");
     }
 
-    public static void runHaskell() throws IOException, InterruptedException {
+    public static void runRICOAutoILP(String goal) throws IOException {
+        String system = System.getProperty("os.name");
+        File location;
+
+        System.out.println("Executing SWI-Prolog query:" + " " + goal);
+
+        if (system.contains("Windows"))
+            location = new File("RiCO-AI\\resources");
+        else
+            location = new File("resources/");
+
+        String[] cmd = {"swipl", "-g", goal, "rdf2pl.pl"};
+        ProcessBuilder builder = new ProcessBuilder(cmd);
+        builder.directory(location);
+        Process p = builder.start();
+
+        InputStream is = p.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+
+        p.destroy();
+
+    }
+
+    public static void runHaskell(String func, String arg1, String arg2) throws IOException, InterruptedException {
 
         int num1 = 3;
         int num2 = 4;
@@ -75,14 +161,14 @@ public class Main {
         /*String system = System.getProperty("os.name");
         File location;
 
-        System.out.println("Executing Haskell query...");
+        System.out.println("Executing Haskell query:" + " " + func + " " + arg1 + " " + arg2);
 
         if (system.contains("Windows"))
             location = new File("RiCO-AI\\resources");
         else
             location = new File("resources/");
 
-        String[] cmd = {"runghc","LODv2.hs","tau","(Being Bird)"};
+        String[] cmd = {"runghc","LODv2.hs",func , arg1, arg2};
         ProcessBuilder builder = new ProcessBuilder(cmd);
         builder.directory(location);
         Process p = builder.start();
@@ -111,20 +197,7 @@ public class Main {
       //  p.destroy();
         }
 
-        public static void queryServer() throws FileNotFoundException {
-            String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-                    "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>\n" +
-                    "SELECT DISTINCT ?this ?this_label WHERE {\n" +
-                    "  ?this rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
-                    "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Lieu_1.\n" +
-                    "  ?Lieu_1 rdf:type <https://www.ica.org/standards/RiC/ontology#Place>.\n" +
-                    "  ?Lieu_1 <https://www.ica.org/standards/RiC/ontology#hasOrHadPlaceType> <http://data.archives-nationales.culture.gouv.fr/placeType/paroisse>.\n" +
-                    "  ?Lieu_1 ^<https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Personne_3.\n" +
-                    "  ?Personne_3 rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
-                    "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadAgentName>/<http://www.w3.org/2000/01/rdf-schema#label>|<http://www.w3.org/2000/01/rdf-schema#label> ?this_label.\n" +
-                    "}\n" +
-                    "LIMIT 10000";
+        public static void queryServer(String query) throws FileNotFoundException {
 
             String system = System.getProperty("os.name");
             File config;

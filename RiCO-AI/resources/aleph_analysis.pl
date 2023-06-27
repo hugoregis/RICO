@@ -1,7 +1,7 @@
 :- module(aleph_analysis, [write_rules/0]).
 
 :- use_module(library(readutil)).
-:- open('rules.txt',write,Stream), write(Stream, "Rules learned:"), close(Stream).
+:- open('rules.txt',write,Stream), write(Stream, ":- module(rules, [])"), nl, nl, write(Stream, "%%Rules learned:"), close(Stream).
 
 write_rules :- 
 	aleph:write_rules('newRules.txt',user),
