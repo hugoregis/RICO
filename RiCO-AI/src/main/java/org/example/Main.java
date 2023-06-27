@@ -8,6 +8,7 @@ import kbingest.ILPGen;
 import kbingest.RandFactGen;
 
 import kbingest.parser.ParseError;
+import kbingest.translator.KB;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
@@ -20,11 +21,13 @@ import org.jpl7.Term;
 import org.jpl7.Variable;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws ParseError, IOException, InterruptedException {
-        System.out.println("Hello world!");
+        //System.out.println("Hello world!");
         String system = System.getProperty("os.name");
         String[] filePaths = new String[1];
 
@@ -36,48 +39,12 @@ public class Main {
        //KB myKB = new KB(filePaths);
        //ILPGen ILP = new ILPGen(myKB);
        //ILP.run();
-       //runHaskell();
+       runHaskell();
 
 //        runPrologAutoILP();
 //        testProlog2();
 //        RandFactGen FactGen = new RandFactGen(myKB);
 //        FactGen.run();
-//
-       String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-               "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
-               "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> \n" +
-               "SELECT DISTINCT ?this ?this_label WHERE {\n" +
-               "  ?this rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
-               "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Lieu_1.\n" +
-               "  ?Lieu_1 rdf:type <https://www.ica.org/standards/RiC/ontology#Place>.\n" +
-               "  ?Lieu_1 <https://www.ica.org/standards/RiC/ontology#hasOrHadPlaceType> <http://data.archives-nationales.culture.gouv.fr/placeType/paroisse>.\n" +
-               "  ?Lieu_1 ^<https://www.ica.org/standards/RiC/ontology#hasOrHadLocation> ?Personne_3.\n" +
-               "  ?Personne_3 rdf:type <https://www.ica.org/standards/RiC/ontology#Person>.\n" +
-               "  \n" +
-               "  ?this <https://www.ica.org/standards/RiC/ontology#hasOrHadAgentName>/<http://www.w3.org/2000/01/rdf-schema#label>|<http://www.w3.org/2000/01/rdf-schema#label> ?this_label.\n" +
-               "}\n" +
-               "LIMIT 10000";
-
-        String serviceURI = "http://18.206.154.126:3030/ricoSession";
-//        String mine= "http://localhost:3030/Sp52.54.229.238arnatural";
-
-        RDFConnection conn = RDFConnection.connect(serviceURI);
-        QueryExecution q = conn.query(query) ;
-        //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
-
-
-        ResultSet results = q.execSelect();
-
-        ResultSetFormatter.out(System.out, results);
-
-        while (results.hasNext()) {
-            QuerySolution soln = results.nextSolution();
-            RDFNode x = soln.get("x");
-            System.out.println(x);
-        }
-
-        conn.close() ;
-
     }
 
     public static void runPrologAutoILP(){
@@ -91,7 +58,21 @@ public class Main {
 
     public static void runHaskell() throws IOException, InterruptedException {
 
-        String system = System.getProperty("os.name");
+        int num1 = 3;
+        int num2 = 4;
+
+        URL hsurl = new URL("http://localhost:8000/?num1=" + num1 + "&num2=" + num2);
+        URLConnection hsconn = hsurl.openConnection();
+        BufferedReader input = new BufferedReader(
+                new InputStreamReader(
+                        hsconn.getInputStream()));
+        String inputLine;
+
+        while ((inputLine = input.readLine()) != null)
+            System.out.println(inputLine);
+        input.close();
+
+        /*String system = System.getProperty("os.name");
         File location;
 
         System.out.println("Executing Haskell query...");
@@ -127,7 +108,7 @@ public class Main {
 //        int exitVal = p.waitFor();
 //        System.out.println("Exit Value: " + exitVal);
 
-        p.destroy();
+      //  p.destroy();
         }
 
         public static void queryServer() throws FileNotFoundException {
