@@ -15,9 +15,22 @@
 
 %% aleph:write_rules('rules.txt',user).
 
+:- set_prolog_stack(global, limit(10000000000)).
+:- set_prolog_stack(local, limit(10000000000)).
+:- set_prolog_stack(trail, limit(10000000000)).
+:- set_prolog_stack(global, spare(2048)).
+:- set_prolog_stack(local, spare(2048)).
+:- set_prolog_stack(trail, spare(2048)).
+
+:- findall(X, prolog_stack_property(global, X), Xs), write(Xs).
+:- findall(X, prolog_stack_property(local, X), Xs), write(Xs).
+:- findall(X, prolog_stack_property(trail, X), Xs), write(Xs).
+
+%% :- use_module(library(persistency)).
+:- use_module(aleph_analysis).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(readutil)).
-:- working_directory(_,'/Users/hugolinbergier/RDF_DB').
+:- use_module(symmetricPred).
 
 %% :- rdf_load('FRAN_Agent_010128.rdf').
 
@@ -34,7 +47,61 @@
 
 :- dynamic(rdf_predicate/1).
 
-init_ILP5 :- init_ILP(5).
+fileSizeFactor(100).
+
+degreeProb(0,1,N) :- fileSizeFactor(F), N is 30*F.
+degreeProb(1,N1,N2) :- fileSizeFactor(F), N1 is (30*F)+1, N2 is 50*F.
+degreeProb(2,N1,N2) :- fileSizeFactor(F), N1 is (50*F)+1, N2 is 75*F.
+degreeProb(3,N1,N2) :- fileSizeFactor(F), N1 is (75*F)+1, N2 is 90*F.
+degreeProb(4,N1,N2) :- fileSizeFactor(F), N1 is (90*F)+1, N2 is 100*F.
+degreeProb(100,0,0).
+maxDegree(4).
+avgNumPos(200).
+avgNumNeg(100).
+
+write_rdf_aleph_init(Stream) :-
+	write(Stream, ':- use_module(library(aleph)).'), nl(Stream),
+	write(Stream, ':- if(current_predicate(use_rendering/1)).') , nl(Stream),
+	write(Stream, ':- use_rendering(prolog).') , nl(Stream),
+	write(Stream, ':- endif.'), nl(Stream),
+	write(Stream, ':- aleph.'), nl(Stream),
+	%% write(Stream, ':- style_check(-discontiguous).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(i,2).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(mode_overlap_threshold,0.95).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(search,df).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(search,heuristic).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(minacc,0.0).'), nl(Stream),
+	%% write(Stream, ':- aleph_set(explore,true).'), nl(Stream),
+	write(Stream, ':- aleph_set(goodfile,\'goodfile.txt\').'), nl(Stream),
+	write(Stream, ':- aleph_set(good,true).'), nl(Stream),
+	write(Stream, ':- aleph_set(minpos,2).'), nl(Stream).
+
+
+rdf_auto :-
+	working_directory(_,'/Users/hugolinbergier/RDF_DB'),
+	(rdf(_,_,_) -> true ; \+ load_rdf_files),
+	\+ retractSymm,
+	working_directory(_,'/Users/hugolinbergier/dev/RICO/RiCO-AI/resources'),
+	logw('Asserting all new RDF predicates...'),
+	\+ assert_rdf_predicates,
+	findall(Pred, rdf_predicate(Pred), ListPred),
+	member(P, ListPred), 
+	P \= rdf_type,
+	length(ListPred, NbPred),
+	nth0(I,ListPred,P),
+	logw2('Writting Aleph file for predicate '), write(I), write('/'), write(NbPred), write(': '), write(P), nl,
+	write_rdf_aleph('test_rdf.pl', P, 2),
+	logw('Consutling new Aleph file...'),
+	consult('test_rdf.pl'),
+	logw('Inducing new Aleph file...'),
+	induce_modes,
+	%% induce_theory,
+	%% induce_cover,
+	%% induce_features,
+	%% induce,
+	aleph_analysis:write_rules,
+	\+ closeAllFiles,
+	fail.
 
 load_rdf_files :- 
 	rdf_load('/Users/hugolinbergier/RDF_DB/RiC-O_v0-2.rdf', [register_namespaces(true)]),
@@ -53,6 +120,57 @@ load_rdf_files(MAX) :-
 	I < MAX,
 	rdf_load(File, [register_namespaces(true)]),
 	fail.
+
+retractSymm:-
+	symmPred(P),
+	recompose_uri(P,Pred),
+	rdf_retractall(_,Pred,_),
+	fail.
+
+move1degree(triple(X,Y,Z), newRDFTriple(X2,Y2,Z2)):-
+	random_permutation([X,Y,Z],L1),
+	random_permutation([X2,Y2,Z2],L2),
+	member(FixedValue, L1),
+	member(NewPosition, L2),
+	NewPosition = FixedValue,
+	rdf(X2,Y2,Z2),
+	!.
+
+moveNdegrees(2, triple(X,Y,Z), newRDFTriple(XN,YN,ZN)):-
+	%% write('move 2 degree from : '), write(triple(X,Y,Z)), nl,
+	move1degree(triple(X,Y,Z), newRDFTriple(X2,Y2,Z2)),
+	move1degree(triple(X2,Y2,Z2), newRDFTriple(XN,YN,ZN)),
+	!.
+moveNdegrees(N, triple(X,Y,Z), newRDFTriple(XN,YN,ZN)):-
+	N > 2,
+	%% write('move N degree with N = '), write(N), write(' from : '), write(triple(X,Y,Z)), nl,
+	N2 is N - 1,
+	%% write('N2 is now: '), write(N2), nl,
+	move1degree(triple(X,Y,Z), newRDFTriple(X2,Y2,Z2)),
+	moveNdegrees(N2, triple(X2,Y2,Z2), newRDFTriple(XN,YN,ZN)).
+
+contextual_rdf(Pred) :-
+	%% write('predicate: '), write(Pred), nl,
+	maxDegree(MaxDeg),
+	degreeProb(MaxDeg,_,MaxProb),
+	rdf(S,Pred,O),
+	%% write('new rdf fact.'), nl,
+	once(random(0,MaxProb,R)),
+	%% write('Random number: '), write(R), nl,
+	degreeProb(Deg,Min,Max), R >= Min, R =< Max,
+	%% write('Degree: '), write(Deg), nl,
+	assertContextRDFDegree(S,Pred,O,Deg).
+
+assertContextRDFDegree(S,Pred,O,Deg) :-
+	(Deg == 0 -> (assert(contextRDF(S,Pred,O)), !, fail) ; 
+		(Deg == 1 -> (move1degree(triple(S,Pred,O), newRDFTriple(X,Y,Z)), assert(contextRDF(X,Y,Z)), !, fail) ; 
+			(Deg == 2 -> (moveNdegrees(2, triple(S,Pred,O), newRDFTriple(X,Y,Z)), assert(contextRDF(X,Y,Z)), !, fail) ; 
+				(Deg == 3 -> (moveNdegrees(3, triple(S,Pred,O), newRDFTriple(X,Y,Z)), assert(contextRDF(X,Y,Z)), !, fail) ; 
+					true)))),
+	!
+	.
+
+
 
 init_ILP(NbFiles) :- 
 	get_time(T1),
@@ -77,7 +195,8 @@ init_ILP(NbFiles) :-
 decompose_uri(URI, Prefix, LocalName) :- rdf_global_id(Prefix:LocalName, URI).
 decompose_uri(URI, PrefixLocalName) :- 
 	rdf_global_id(Prefix:LocalName, URI), 
-	atomic_list_concat([Prefix, LocalName], '_', PrefixLocalName),
+	atomic_list_concat([Prefix, LocalName], '_', PrefixLocalName2),
+	term_to_atom(PrefixLocalName2, PrefixLocalName),
 	!.
 decompose_uri(URI, URI).
 recompose_uri(PrefixLocalName, URI) :-
@@ -114,27 +233,7 @@ rdf_rules_count(NbRules) :-
 
 
 
-rdf_auto :-
-	logw('Asserting all new RDF predicates...'),
-	\+ assert_rdf_predicates,
-	findall(Pred, rdf_predicate(Pred), ListPred),
-	member(P, ListPred), 
-	P \= rdf_type,
-	length(ListPred, NbPred),
-	nth0(I,ListPred,P),
-	logw2('Writting Aleph file for predicate '), write(I), write('/'), write(NbPred), write(': '), write(P), nl,
-	write_rdf_aleph('test_rdf.pl', P, 2),
-	logw('Consutling new Aleph file...'),
-	consult('test_rdf.pl'),
-	logw('Inducing new Aleph file...'),
-	induce('test_rdf.pl'),
-	aleph:write_rules('newRules.txt',user),
-	read_file_to_string('newRules.txt',AddRules,[]), 
-	logw('Updating rules file...'),
-	open('/Users/hugolinbergier/dev/RICO/RiCO-AI/resources/RICOrules.txt',append,Stream),
-	write(Stream, AddRules), nl(Stream),
-	close(Stream),
-	fail.
+
 
 two_rdf_resources(S,O):-
 	rdf_resource(S),
@@ -144,10 +243,15 @@ two_rdf_resources(S,O):-
 	%% random_member(O,Rs).
 
 assert_rdf_predicates :- 
-	rdf(_, P, _),
+	findall(Pred, rdf(_,Pred,_), ListPred),
+	sort(ListPred, ListPredDistinct),
+	member(P,ListPredDistinct),
 	decompose_uri(P, P2),
-	(\+ rdf_predicate(P2) -> assertz(rdf_predicate(P2)) ; true),
-	write('asserted predicate '), write(P2), nl,
+	\+ sub_atom(P2, _, _, _, '-'),
+	\+ get_prefix(P2, dc),
+	\+ get_prefix(P2, skos),
+	assertz(rdf_predicate(P2)),
+	%% write('asserted predicate '), write(P2), nl,
 	fail.
 
 assert_rdf :- 
@@ -173,16 +277,26 @@ write_rdf_facts(Stream) :-
 	fail.
 
 write_rdf_bg(Stream, Pred) :-
-	rdf(S, P, O), 
-	decompose_uri(S, S2), decompose_uri(P, P2), decompose_uri(O, O2), 
-	P2 \= Pred,
+	retractall(contextRDF(_,_,_)),
+	recompose_uri(Pred, PredFullURI),
+	once(contextual_rdf(PredFullURI)),
+	contextRDF(S, P, O), 
+	decompose_uri(S, S2), decompose_uri(P, P2), decompose_uri(O, O2),
 	Term =.. [P2, S2, O2], 
+	%% write('background fact :'), write(Term), nl,
 	writeq(Stream, Term), write(Stream, '.'), nl(Stream),
 	fail.
+
+write_rdf_bgRules(Stream) :-
+	read_file_to_string('bgRules.pl',BGRules,[]), 
+	write('Adding Background rules file...'),
+	write(Stream, BGRules).
+
 
 write_rdf_pos(Stream, Pred) :-
 	recompose_uri(Pred, P),
 	rdf(S, P, O), 
+	avgNumPos(N), random(0,N,R), (R == 0 -> (!, fail) ; true),
 	decompose_uri(S, S2), decompose_uri(O, O2), 
 	Term =.. [Pred, S2, O2],	 
 	writeq(Stream, Term), write(Stream, '.'), nl(Stream),
@@ -193,11 +307,12 @@ write_rdf_neg(Stream, Pred) :-
 	rdf_resource(S),
 	rdf_resource(O),
 	\+ rdf(S, P, O),
+	avgNumNeg(N), random(0,N,R), (R == 0 -> (!, fail) ; true),
 	decompose_uri(S, S2), decompose_uri(O, O2), 
 	Term =.. [Pred, S2, O2], 
 	writeq(Stream, Term), write(Stream, '.'), nl(Stream),
-	random(1,10,R),
-	(R > 8 -> true ; fail).
+	fail.
+	
 
 write_rdf(FileName) :-
 	open(FileName, append, Stream), 
@@ -209,27 +324,32 @@ write_rdf(FileName) :-
 
 
 
-write_rdf_aleph_init(Stream) :-
-	write(Stream, ':- use_module(library(aleph)).'), nl(Stream),
-	write(Stream, ':- if(current_predicate(use_rendering/1)).') , nl(Stream),
-	write(Stream, ':- use_rendering(prolog).') , nl(Stream),
-	write(Stream, ':- endif.'), nl(Stream),
-	write(Stream, ':- aleph.'), nl(Stream),
-	write(Stream, ':- style_check(-discontiguous).'), nl(Stream),
-	write(Stream, ':- aleph_set(i,2).'), nl(Stream),
-	write(Stream, ':- aleph_set(verbosity,1).'), nl(Stream),
-	write(Stream, ':- aleph_set(minpos,2).'), nl(Stream).
+
 	
 
 write_rdf_aleph_mode(Stream) :-
 	rdf_current_predicate(P),
-	once(rdf(S, P, O)), rdf(S, rdf:type, S_Type), rdf(O, rdf:type, O_Type),
-	decompose_uri(P, P2), decompose_uri(S_Type, S2), decompose_uri(O_Type, O2),
-	write(Stream, ':- mode(*, '), write(Stream, P2), write(Stream, '(+'), write(Stream, S2), write(Stream, ', +'), write(Stream, O2), write(Stream, ')).'), nl(Stream),
+		%% current_iteration(I),
+		%% max_iteration(M),
+		%% (I > M -> (!, fail) ; true),
+		%% I2 is I + 1,
+		%% retractall(current_iteration(_)),
+		%% assert(current_iteration(I2)),
+	%% once(rdf(S, P, O)), rdf(S, rdf:type, S_Type), rdf(O, rdf:type, O_Type),
+	decompose_uri(P, P2), 
+	%% decompose_uri(S_Type, S2), decompose_uri(O_Type, O2),
+	write(Stream, ':- mode(*, '), write(Stream, P2), write(Stream, '(+rdf_thing, +rdf_thing)).'), nl(Stream),
+		%% write(Stream, S2), write(Stream, ', +'), write(Stream, O2), write(Stream, ')).'), nl(Stream),
 	fail.
 
 write_rdf_aleph_det(Stream, Pred, Arity) :-
 	rdf_current_predicate(P),
+		%% current_iteration(I),
+		%% max_iteration(M),
+		%% (I > M -> (!, fail) ; true),
+		%% I2 is I + 1,
+		%% retractall(current_iteration(_)),
+		%% assert(current_iteration(I2)),
 	decompose_uri(P, P2),
 	P2 \= Pred,
 	write(Stream, ':- determination('), write(Stream, Pred), write(Stream, '/'), write(Stream, Arity), write(Stream, ', '), write(Stream, P2), write(Stream, '/2).'), nl(Stream),
@@ -237,6 +357,12 @@ write_rdf_aleph_det(Stream, Pred, Arity) :-
 
 write_rdf_aleph_dyn(Stream) :-
 	rdf_current_predicate(P),
+		%% current_iteration(I),
+		%% max_iteration(M),
+		%% (I > M -> (!, fail) ; true),
+		%% I2 is I + 1,
+		%% retractall(current_iteration(_)),
+		%% assert(current_iteration(I2)),
 	decompose_uri(P, P2),
 	write(Stream, ':- dynamic('), write(Stream, P2), write(Stream, '/2).'), nl(Stream),
 	fail.
@@ -246,29 +372,42 @@ write_rdf_aleph(FileName, Pred, Arity) :-
 	logw('    * Writing initialization queries...'), 
 	write_rdf_aleph_init(Stream), nl(Stream), nl(Stream),
 	logw('    * Writing mode queries...'),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
 	\+ write_rdf_aleph_mode(Stream), nl(Stream), nl(Stream),
 	logw('    * Writing determination queries...'),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
 	\+ write_rdf_aleph_det(Stream, Pred, Arity), nl(Stream), nl(Stream),
 	logw('    * Writing dynamic declarations...'),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
 	\+ write_rdf_aleph_dyn(Stream), nl(Stream), nl(Stream),
 	logw('    * Writing background facts...'),
 	write(Stream, ':-begin_bg.'), nl(Stream),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
 	\+ write_rdf_bg(Stream, Pred), nl(Stream), nl(Stream),
+	write_rdf_bgRules(Stream), nl(Stream), nl(Stream),
 	write(Stream, ':-end_bg.'), nl(Stream), nl(Stream), nl(Stream),
 	logw('    * Writing positive examples...'),
 	write(Stream, ':-begin_in_pos.'), nl(Stream),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
 	\+ write_rdf_pos(Stream, Pred), nl(Stream), nl(Stream),
 	write(Stream, ':-end_in_pos.'), nl(Stream), nl(Stream), nl(Stream),
 	logw('    * Writing negative examples...'),
 	write(Stream, ':-begin_in_neg.'), nl(Stream),
-	write_rdf_neg(Stream, Pred), nl(Stream), nl(Stream),
+	retractall(current_iteration(_)),
+	assert(current_iteration(0)),
+	\+ write_rdf_neg(Stream, Pred), nl(Stream), nl(Stream),
 	write(Stream, ':-end_in_neg.'), nl(Stream),
 	logw('    * End of file writing.'),
 	close(Stream),
 	!.
 
 
-
+closeAllFiles :- stream_property(S, file_name(_)), close(S), fail.
 
 logw(T) :-
 	write('RDF ILP LOG >>  '), write(T), nl.
