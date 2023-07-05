@@ -52,6 +52,20 @@
 :- sparql_endpoint( fuseki, 'http://100.25.165.73:3030/ricoDataset').
 :- sparql_endpoint( fusekiInfer, 'http://100.25.165.73:3030/ricoDatasetInferred').
 
+testFuseki(P,Y) :- 
+	??(fuseki, rdf('https://www.ica.org/standards/RiC/ontology#Record', P, Y)), 
+	write('it works'), nl.
+
+rdfFu(X,Y,Z) :- ??(fuseki, rdf(X,Y,Z)).
+
+most_in_except(P1, P2, X_odd) :-
+	rdfFu(X,P1,Y1),
+	X \= '<http://data.archives-nationales.culture.gouv.fr/record/010128> <https://www.ica.org/standards/RiC/ontology#source>',
+	rdfFu(X,P2,Y2),
+	random(0,150,R), 
+	R > 145,
+	(rdfFu(X_odd, P1, Y1) -> \+ rdfFu(X_odd, P2, Y2) ; rdfFu(X_odd, P2, Y2)),
+	write('Found oddball'), nl.
 
 fileSizeFactor(100).
 
