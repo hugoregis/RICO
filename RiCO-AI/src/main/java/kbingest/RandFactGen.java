@@ -23,19 +23,19 @@ public class RandFactGen {
 
     public String run() throws IOException {
         String system = System.getProperty("os.name");
-        String location;
+//        String location;
 
-        if (system.contains("Windows"))
-            location = "RICO-AI\\resources\\random_facts";
-        else
-            location = "resources/random_facts";
+//        if (system.contains("Windows"))
+//            location = "RICO-AI\\resources\\random_facts.pl";
+//        else
+//            location = "resources/random_facts.pl";
 
         Query q1 =
                 new Query(
                         "use_module",
-                        new Term[] {new Atom(location)}
+                        new Term[] {new Atom("random_facts.pl")}
                 );
-        System.out.println( "use_module " + location + " " + (q1.hasSolution() ? "succeeded" : "failed"));
+        System.out.println( "use_module random_facts " + (q1.hasSolution() ? "succeeded" : "failed"));
 
         String completeListPred = "";
 
@@ -59,8 +59,8 @@ public class RandFactGen {
             System.out.println( "get_X_random_pred results: " + result);
             completeListPred = completeListPred + ", " + result.substring(1, result.length() - 1);
         }
-        completeListPred = "[" + completeListPred.substring(2, completeListPred.length()) + "]";
-        System.out.println(completeListPred);
+        completeListPred = "[" + completeListPred.substring(2, completeListPred.length()) + ", fly(penguin)" + "]";
+        System.out.println("Random facts generated: " + completeListPred);
         return completeListPred;
     }
 

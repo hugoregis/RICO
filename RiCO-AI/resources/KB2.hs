@@ -19,7 +19,7 @@ categ Crocodile = ([Animal, Reptile, Lay_Eggs],[])
 categ Snake = ([Animal, Reptile, Lay_Eggs],[])
 categ Platypus = ([Animal, Mammal, Has_Milk, Lay_Eggs, Homeothermic, Has_Hair],[])
 categ T_rex = ([Animal, Reptile, Lay_Eggs],[])
-categ Ostrich = ([Animal, Bird, Lay_Eggs, Homeothermic],[Fly]) -- Not Fly : rectification post-apprentissage
+categ Ostrich = ([Animal, Bird, Lay_Eggs, Homeothermic],[]) -- Add Not Fly : rectification post-apprentissage
 categ Penguin = ([Animal, Bird, Lay_Eggs, Homeothermic],[])
 categ Trout = ([Animal, Fish, Lay_Eggs, Has_Gills, Has_Scales],[])
 categ Herring = ([Animal, Fish, Lay_Eggs, Has_Gills],[])
@@ -42,6 +42,7 @@ categEss Animal = [Thing]
 categEss Dog = [Animal]
 categEss Eagle = [Animal]
 categEss Robin = [Animal]
+categEss Bird = [Animal, Fly, Homeothermic] -- remove Fly
 categEss x = []
 
 

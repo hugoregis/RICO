@@ -14,7 +14,7 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdfconnection.RDFConnection;
+//import org.apache.jena.rdfconnection.RDFConnection;
 import org.jpl7.Atom;
 import org.jpl7.Query;
 import org.jpl7.Term;
@@ -23,11 +23,12 @@ import org.jpl7.Variable;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws ParseError, IOException, InterruptedException {
-        //System.out.println("Hello world!");
+        Scanner sc= new Scanner(System.in);
         String system = System.getProperty("os.name");
         String[] filePaths = new String[1];
 
@@ -37,10 +38,13 @@ public class Main {
             filePaths[0] = "resources/animals.pl";
 
 
-       //KB myKB = new KB(filePaths);
-       //ILPGen ILP = new ILPGen(myKB);
-       //ILP.run();
-       runHaskell();
+
+
+//
+//       KB myKB = new KB(filePaths);
+//       ILPGen ILP = new ILPGen(myKB);
+//       ILP.run();
+//       runHaskell();
 
 //        runPrologAutoILP();
 //        testProlog2();
@@ -48,30 +52,51 @@ public class Main {
 //        FactGen.run();
         //        testProlog2();  //test JPL
 
+
        KB myKB = new KB(filePaths);
        ILPGen ILP = new ILPGen(myKB);
        ILP.run();
-       runPrologAutoILP();
+       System.out.print("Aleph ILP files have been generated - Press enter to continue with the induction on multiple files...");
+       sc.nextLine();              //reads string
 
-       Query q = new Query("fly", new Term[] {new Variable("X")});
+        runPrologAutoILP();
 
-       System.out.println("FLying animal : " + q.oneSolution().get("X")); // To demonstrate the persisting working memory of the swipl process
+        System.out.print("Induction on multiple files is over - Press enter to continue with the following query test: ?- fly(X).");
+        sc.nextLine();              //reads string
 
-       RandFactGen FactGen = new RandFactGen(myKB);
+
+        Query q = new Query("fly", new Term[] {new Variable("X")});
+
+
+
+        System.out.println("Flying animals are : "); // To demonstrate the persisting working memory of the swipl process
+
+        while (q.hasMoreSolutions()){
+            System.out.println(q.nextSolution().values());
+        }
+
+        System.out.print("Press enter to continue with generation of random facts from the new Knowledge Base...");
+        sc.nextLine();              //reads string
+//        Here we should check if all the rules have been added effectively. It looks like only the last one is added to KB
+
+        RandFactGen FactGen = new RandFactGen(myKB);
        String listPred = FactGen.run();
+        System.out.print("Random facts have been generated - Press enter to continue with the validity test for those facts (with GPT3)...");
+        sc.nextLine();
 
-
+//
+//
        CompletionRequest GPTFacts = new CompletionRequest(); // is it really going to include all the new rules. We need to import them to make sure it is the case.
        GPTFacts.runPL2English(listPred);
 //
 //       runRICOAutoILP("init_ILP5");
 
-       runHaskell("predicate", "(Being Bird)", "Delta (Det {detChain = []}) (Being Ostrich)");
-       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Ostrich)");
-       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Bird)");
+//       runHaskell("predicate", "(Being Bird)", "Delta (Det {detChain = []}) (Being Ostrich)");
+//       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Ostrich)");
+//       runHaskell("predicate", "(Being Fly)", "Delta (Det {detChain = []}) (Being Bird)");
 
 
-        testSPARQLQuery();
+//        testSPARQLQuery();
 
     }
 
@@ -220,29 +245,29 @@ public class Main {
 
             //String mine = "http://localhost:3030/Sparnatural";
 
-            try {
-                RDFConnection conn = RDFConnection.connect(serviceURI);
-                QueryExecution q = conn.query(query);
-                //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
-
-
-                ResultSet results = q.execSelect();
-
-                ResultSetFormatter.out(System.out, results);
-
-                while (results.hasNext()) {
-                    QuerySolution soln = results.nextSolution();
-                    RDFNode x = soln.get("x");
-                    System.out.println(x);
-                }
-
-
-                conn.close();
-            }
-
-            catch (Exception e){
-                System.out.println("The server is offline right now");
-            }
+//            try {
+//                RDFConnection conn = RDFConnection.connect(serviceURI);
+//                QueryExecution q = conn.query(query);
+//                //QueryExecution q = QueryExecution.service(serviceURI).query(query).build();
+//
+//
+//                ResultSet results = q.execSelect();
+//
+//                ResultSetFormatter.out(System.out, results);
+//
+//                while (results.hasNext()) {
+//                    QuerySolution soln = results.nextSolution();
+//                    RDFNode x = soln.get("x");
+//                    System.out.println(x);
+//                }
+//
+//
+//                conn.close();
+//            }
+//
+//            catch (Exception e){
+//                System.out.println("The server is offline right now");
+//            }
         }
 
 
